@@ -1,0 +1,11 @@
+.to-do {
+  width: 600px;
+  height: 400px;
+  background-color: aliceblue;
+  border: 1px solid aliceblue;
+  border-radius: 9px;
+}
+
+.disapper {
+  display: none;
+}/*# sourceMappingURL=index.css.map */

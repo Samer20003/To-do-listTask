@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-do</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="index.css">
+    <!-- <link rel="stylesheet" href="index.css"> -->
+        <!-- 1. You have a todo list
+        2. Each item contains title, description, date to do it
+        3. You need to display this list each item in a row
+        4. In each row display the title, description and formatted date (dd-mm)
+        5. Each row should contain 3 actions (sort, edit, delete)
+        6. Delete action opens a confirmation alert
+        7. Edit action makes the todo's title and description and date editable
+        8. Group the todos by day
+        json file not add by input 
+        are you sure want to delete to do item title 
+        sort drag droup not button 
+        edit should be in the same box
+        when we click update should disapper the items 
+        9. Sorting should happen in the same group -->
+</head>
+<body class="bg-success p-2" style="--bs-bg-opacity: .5;">
+    <div class="d-flex justify-content-center align-items-center  ">
+        <div class="to-do" style="width: 400px;">
+            <h1 class="text-dark d-flex justify-content-center">To-Do List</h1>
+            <ul class="list-group" id="list"></ul>
+        
+        </div>
+    </div>
+    <script src="jquery-3.7.1.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
+    <script>
+
+        // 1. define an array of object that have the title and description and data as a keys and there values 
+        // 2. define a function that convert the date ass (dd-mm)
+        // 3. define a function that render the data inside our array by using forEach and make a form inside it to append it for the todoIem in html 
+
+        (function(){
+
+            const todos = [
+                {title:'Workout',description:'chest day work out for 2 houres',date: '2015-04-02'},
+                {title:'study',description:'study for 4 houres per day',date: '2015-04-02'},
+                {title:'reading',description:'read a new book ',date: '2015-04-02'}
+            ];
+
+            function formatDate(dateString){
+                const date = new Date(dateString);
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                return `${day}-${month}`;
+            }
+            function renderTodos(){
+                $('#list').empty();
+                todos.forEach((todo,index) => {
+                    const item = $(`
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div class="content">
+                                    <h5 class="title" data-index=${index}">${todo.title}</h5>
+                                    <p class="parg">${todo.description}</p>
+                                    <p class="date">${formatDate(todo.date)}</p>
+
+                                </div>
+                               
+                            </div>
+                            <div class="d-flex justify-content-end gap-2 buttons">
+                                <button class="btn btn-secondary btn-sm btn1 ">Sort</button>
+                                <button class="btn btn-secondary btn-sm edit-btn btn2" data-index="${index}">Edit</button>
+                                <button class="btn btn-danger btn-sm delete-btn btn3" data-index="${index}">Delete</button>
+                            </div>
+                        </li>
+                    `);
+                    $('#list').append(item);
+                });
+             
+            }
+            // Delete button
+            $('#list').on('click','.delete-btn', function(){
+                    const index= $(this).data('index');
+                    if(confirm('Are you sure want to delete this item?')){
+                        todos.splice(index,1);
+                        renderTodos();
+                    }
+                  })
+                  // Edit button
+                  $('#list').on('click','.edit-btn', function(){
+                   
+                    const index= $(this).data('index');
+                  
+                    
+                    const todo = todos[index];
+                    // $(this).siblings('.btn1, .btn2,.btn3').addClass('disapper');
+                    // $(this).addClass('disapper');
+                    // create a new form to replace it when the edit button is clicked
+                    const editForm= $(`
+                    <div class="edit-form">
+                        <input type="text" class="form-control mb-2" id="edit-title" value="${todo.title}">
+                        <input type="text" class="form-control mb-2" id="edit-description" value="${todo.description}">
+                        <input type="date" class="form-control mb-2" id="edit-date" value="${todo.date}">
+                        <button class="btn btn-primary btn-sm save-btn " data-index="${index}">Save</button>
+                        <button class="btn btn-secondary btn-sm cancel-btn " data-index=${index}>Cancel</button>
+                    </div>
+                    `)
+                    $(this).closest('.list-group-item').find('.content').replaceWith(editForm);
+                   
+                   
+                  });
+                  // Cancel button
+                  $('#list').on('click', '.cancel-btn',function(){
+                    
+                      console.log($(this))
+                      const index= $(this).data('index');
+                      console.log(index);
+                      const todo= todos[index];
+                     
+
+                      const originalForm = $(`
+                            <div class="content">
+                                <h5 class="title" data-index="${index}">${todo.title}</h5>
+                                <p class="parg">${todo.description}</p>
+                            </div>
+                        `);
+                    
+                    $(this).closest('.list-group-item').find('.edit-form').replaceWith(originalForm);
+                   
+                    
+                    
+                
+                  });
+                  $('#list').on('click', '.save-btn',function(){
+                    const index= $(this).data('index');
+                    const newTitle= $('#edit-title').val();
+                    console.log(newTitle);
+                    const newDescription= $('#edit-description').val();
+                    const newDate= $('#edit-date').val();
+                   if(newTitle && newDescription && newDate){
+                    todos[index]={
+                        title: newTitle,
+                        description: newDescription,
+                        date: newDate,
+                    }
+                    const newForm = $(`
+                            <div class="content">
+                                <h5 class="title" data-index="${index}">${newTitle}</h5>
+                                <p class="parg">${newDescription}</p>
+                                <p class="date">${formatDate(newDate)}</p>    
+                            </div>
+                        `);
+                    $(this).closest('.edit-form').replaceWith(newForm);
+                   }
+                  });
+
+           
+            renderTodos();
+
+
+
+            // $('#addBtn').on('click',function(e){
+            //     console.log('addBtn clicked');
+            //     var title= $('#title-Input').val();
+            //     var description = $('#description-Input').val();
+            //     var date = $('#date-Input').val();
+            //     console.log(date);
+            //     if(title && description && date){
+            //         $('#task-list').append(`<li class="list-group-item"><h1>${title}</h1></li>`);
+            //         $('#task-list').append(`<li class="list-group-item">${description}</li>`);
+            //         $('#task-list').append(`<li class="list-group-item">${date}</li>`);
+            //     }
+            //     e.preventDefault();
+            // })
+            
+        })();
+    </script>
+</body>
+</html>
+
+
