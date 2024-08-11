@@ -18,7 +18,7 @@
         9. Sorting should happen in the same group -->
 </head>
 <body class="bg-success p-2" style="--bs-bg-opacity: .5;">
-    <div class="d-flex justify-content-center align-items-center  ">
+    <div class="d-flex justify-content-center align-items-center mainContainer ">
         <div class="to-do" style="width: 400px;">
             <h1 class="text-dark d-flex justify-content-center">To-Do List</h1>
             <ul class="list-group" id="list"></ul>
@@ -51,6 +51,14 @@
                 <button class="btn btn-secondary btn-sm cancel-btn" data-index="${index}">Cancel</button>
             </div>
             <!-- End of edit Form  -->
+          
+            <!-- Cancel Form  -->
+            <div class="content cancelForm d-none">
+                <h5 class="title" dataindex="${index}">${todo.title}</h5>
+                <p class="parg">${todo.description}</p>
+                <p class="date">${formatDate(todo.date)}</p>
+            </div>
+            <!-- End of Cancel Form -->
         </div>
         
     </div>
@@ -70,38 +78,35 @@
         // 6- in Sort button when the user click sort it can drag it while he still click the button and go with li forword or backword 
 
         (function(){
+
             // Edit Function
             function editModal(){
                 const index = $(this).data('index');
                 const todo = todos[index];
-                $(this).siblings('.sort-btn, .btn2,.btn3').addClass('disapper');
-                $(this).addClass('disapper');
+                $(this).siblings('.sort-btn, .edit-btn, .delete-btn').addClass('d-none');
+                $(this).addClass('d-none');
                // create a new form to replace it when the edit button is clicked
-                const editForm = $(`
-                    <div class="edit-form">
-                        <input type="text" class="form-control mb-2" id="edit-title" value="${todo.title}">
-                        <input type="text" class="form-control mb-2" id="edit-description" value="${todo.description}">
-                        <input type="date" class="form-control mb-2" id="edit-date" value="${todo.date}">
-                        <button class="btn btn-primary btn-sm save-btn" data-index="${index}">Save</button>
-                        <button class="btn btn-secondary btn-sm cancel-btn" data-index="${index}">Cancel</button>
-                    </div>
-                `);
+                const editForm = $('.edit-form').first().clone();
+                editForm.removeClass('d-none');
+                editForm.find('#edit-title').val(todo.title);
+                editForm.find('#edit-description').val(todo.description);
+                editForm.find('#edit-date').val(todo.date);
+                editForm.find('.save-btn').attr("data-index",index);
+                editForm.find('.cancel-btn').attr("data-index",index);
                 $(this).closest('.list-group-item').find('.content').replaceWith(editForm);
             };
-
             // Cancel Fucntion
             function cancelButton(){
                 const index = $(this).data('index');
                 const todo = todos[index];
-                $('#list').find('.sort-btn,.btn2,.btn3').removeClass('disapper');
-                const originalForm = $(`
-                    <div class="content">
-                        <h5 class="title" data-index="${index}">${todo.title}</h5>
-                        <p class="parg">${todo.description}</p>
-                        <p class="date">${formatDate(todo.date)}</p>
-                    </div>
-                `);
-                $(this).closest('.list-group-item').find('.edit-form').replaceWith(originalForm);
+                const originalForm = $('.cancelForm').first().clone(); // clone it and after that update it
+                originalForm.find('.title').html(todo.title); 
+                originalForm.find('.parg').html(todo.description);
+                originalForm.find('.date').html(todo.date);
+                originalForm.removeClass('d-none');
+                $(this).closest('li').find('.sort-btn, .edit-btn, .delete-btn').removeClass('d-none');
+                $(this).closest('.edit-form').replaceWith(originalForm);
+
             }
             // Save Function
             function saveButton(){
@@ -109,7 +114,7 @@
                 const newDate = $('#edit-date').val();
                 const newTitle = $('#edit-title').val();
                 const newDescription = $('#edit-description').val();
-                $('#list').find('.sort-btn,.btn2,.btn3').removeClass('disapper');
+                $('#list').find('.sort-btn,.btn2,.btn3').removeClass('d-none');
 
                 if (newTitle && newDescription && newDate) {
                     todos[index] = {
@@ -127,10 +132,9 @@
                     $(this).closest('.edit-form').replaceWith(newForm);
                 }
             }
-
             // Sort Function
-
             function sortFunction(e){
+            
                 draggedItem = $(this).closest('li');
                 $(document).on('mousemove', onMouseMove); // define a function that will be called when the mouse moves
                 $(document).on('mouseup', onMouseUp); // define a function that will be called when the mouse is released
@@ -146,6 +150,22 @@
                 });
 
             }
+           // Delete function
+           function DelectFunction(){
+            const index = $(this).data('index');
+            const todo = todos[index];
+               $('#delete-title').text(todo.title);
+
+            var myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            myModal.show();
+
+              $('#confirmDelete').off('click.modalDel').on('click.modalDel', function() { // delete every event listenr every time we can use namespace after click so we can specify where we need to make the event
+            todos.splice(index, 1);
+            myModal.hide();
+            renderTodos();
+        });
+
+           }
 
             const todos = [
                 { title: 'Reading', description: 'Read a new book ', date: '2015-04-02' },
@@ -187,21 +207,7 @@
             let placeholder = $('<li class="placeholder"></li>');
     
             // Delete button
-            $('#list').on('click', '.delete-btn', function() {
-            const index = $(this).data('index');
-            const todo = todos[index];
-           $('#delete-title').text(todo.title);
-
-            var myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            myModal.show();
-
-        $('#confirmDelete').off('click.modalDel').on('click.modalDel', function() { // delete every event listenr every time we can use namespace after click so we can specify where we need to make the event
-            todos.splice(index, 1);
-            myModal.hide();
-            renderTodos();
-        });
-
-    });
+            $('#list').on('click', '.delete-btn', DelectFunction); 
             // Edit button
             $('#list').on('click', '.edit-btn', editModal);
             // Cancel button
