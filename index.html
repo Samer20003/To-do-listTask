@@ -44,12 +44,15 @@
 
             <!-- Edit Form  -->
             <div class="edit-form d-none">
-                <input type="text" class="form-control mb-2" id="edit-title" value="${todo.title}">
-                <input type="text" class="form-control mb-2" id="edit-description" value="${todo.description}">
-                <input type="date" class="form-control mb-2" id="edit-date" value="${todo.date}">
-                <button class="btn btn-primary btn-sm save-btn" data-index="${index}">Save</button>
+                <form class="cmxform" id="commentForm" method="get"  action="">
+                <input type="text" class="form-control mb-2" id="edit-title" name="title" value="${todo.title}" required>
+                <input type="text" class="form-control mb-2" id="edit-description" name="description" value="${todo.description}">
+                <input type="date" class="form-control mb-2" id="edit-date" name="date" value="${todo.date}">
+                <button class="btn btn-primary btn-sm save-btn" data-index="${index}" type="submit">Save</button>
                 <button class="btn btn-secondary btn-sm cancel-btn" data-index="${index}">Cancel</button>
+            </form>
             </div>
+            
             <!-- End of edit Form  -->
           
             <!-- Cancel Form  -->
@@ -65,6 +68,7 @@
     
     <script src="jquery-3.7.1.js"></script>
     <script src="https://code.jquery.com/ui/1.14.0/jquery-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
     <script>
 
@@ -77,8 +81,8 @@
         //     * the cancel button will close the modal that shown and return the user in the li every button work alone to the specifc li 
         // 6- in Sort button when the user click sort it can drag it while he still click the button and go with li forword or backword 
 
-        (function(){
-
+       ( function(){
+         
             // Edit Function
             function editModal(){
                 const index = $(this).data('index');
@@ -109,29 +113,52 @@
 
             }
             // Save Function
-            function saveButton(){
-                const index = $(this).data('index');
-                const newDate = $('#edit-date').val();
-                const newTitle = $('#edit-title').val();
-                const newDescription = $('#edit-description').val();
-                $('#list').find('.sort-btn,.btn2,.btn3').removeClass('d-none');
+            function saveButton(e){
+              e.preventDefault();  // Prevent form from submitting normally
+              const form = $(this).closest('form');
 
-                if (newTitle && newDescription && newDate) {
-                    todos[index] = {
-                        date: newDate, 
-                        title: newTitle, // the index on title just why ? 
-                        description: newDescription
-                    };
-                    const newForm = $(`
-                        <div class="content">
-                            <h5 class="title" data-index="${index}">${newTitle}</h5>  
-                            <p class="parg">${newDescription}</p>
-                            <p class="date">${formatDate(newDate)}</p>
-                        </div>
-                    `);
-                    $(this).closest('.edit-form').replaceWith(newForm);
-                }
+                // Validate the form
+                form.validate({
+                    rules: {
+                        title: {
+                            required: true
+                        }
+                    },
+                    messages: {
+                        title: {
+                            required: "Title is required."
+                        }
+                    },
+                });
+
+        // If the form is valid, proceed with saving
+        if(form.valid()){
+            const index = $(this).data('index');
+            const newDate = $('#edit-date').val();
+            const newTitle = $('#edit-title').val();
+            const newDescription = $('#edit-description').val();
+
+            $('#list').find('.sort-btn, .edit-btn, .delete-btn').removeClass('d-none');
+
+            if (newTitle || newDescription || newDate) {
+                todos[index] = {
+                    date: newDate, 
+                    title: newTitle,
+                    description: newDescription
+                };
+
+                const newForm = $(`
+                    <div class="content">
+                        <h5 class="title" data-index="${index}">${newTitle}</h5>  
+                        <p class="parg">${newDescription}</p>
+                        <p class="date">${formatDate(newDate)}</p>
+                    </div>
+                `);
+                $(this).closest('.edit-form').replaceWith(newForm);
             }
+        }
+    }
+
             // Sort Function
             function sortFunction(e){
             

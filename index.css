@@ -11,6 +11,7 @@
 }
 
 #list .list-group-item {
+  cursor: move;
   position: relative;
   border: 1px solid #dddddd;
   background-color: #ffffff;
@@ -30,4 +31,8 @@
   margin-bottom: 10px;
   background-color: #f9f9f9;
   border: 2px dashed #aaa;
+}
+
+#edit-title-error {
+  color: red;
 }/*# sourceMappingURL=index.css.map */
