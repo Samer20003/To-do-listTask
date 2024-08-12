@@ -161,18 +161,25 @@
 
             // Sort Function
             function sortFunction(e){
-            
+                // store the original Y position 
                 draggedItem = $(this).closest('li');
+                draggedItem.data('originalY', e.pageY);
+                draggedItem.data('initialTop', draggedItem.offset().top); // storte the original top position of the dreagged item when the draggin starts i store this value to remember where the dragging started so i can correctly adjust the position of the elemnt as the mouse move  
+                // Attach the event handler for dragging 
                 $(document).on('mousemove', onMouseMove); // define a function that will be called when the mouse moves
                 $(document).on('mouseup', onMouseUp); // define a function that will be called when the mouse is released
+
+                // prepare the placeholder for dragging
                 placeholder.height(draggedItem.outerHeight()); // set placeholder height to the height of the dragged item ourHeight() return the height with the border and padding
                 draggedItem.after(placeholder);
                 draggedItem.addClass('dragging');
+
+                // initial styles for the dragged item 
                 draggedItem.css({
-                    position: 'absolute',
-                    zIndex: 1000,
+                    position: 'absolute', 
+                    zIndex: 1000, // ensure the draged item apper on the top of the other items
                     width: draggedItem.outerWidth(),
-                    top: e.pageY - draggedItem.outerHeight() / 2, //// pageY is a read-only property of the MouseEvent interface returns the Y (vertical) coordinate in pixels
+                    top: draggedItem.offset().top, 
                     left: draggedItem.offset().left
                 });
 
@@ -246,8 +253,11 @@
     
             function onMouseMove(e) {
                 if (draggedItem) {
+                    const originalY = draggedItem.data('originalY');
+                    const deltaY = e.pageY - originalY; // deltaY is a variable used to store the difference between the current vertical mouse position (e.pageY) and the vertical mosue postion where the dragd started which is (orignalY)
                     draggedItem.css({
-                        top: e.pageY - draggedItem.outerHeight() / 2 
+                        top: deltaY + draggedItem.data('initialTop') // i add deltaY to the inital top to ensure that the item moces smoothly preventing it from jumping or misaligning
+                        
                     });
                     $('#list').find('li:not(.placeholder)').each(function() {
                         const currentItem = $(this);
@@ -264,8 +274,10 @@
             }
             function onMouseUp() {
                 if (draggedItem) {
+
                     placeholder.before(draggedItem);
                     draggedItem.removeClass('dragging');
+
                     draggedItem.css({
                         position: '',
                         top: '',
