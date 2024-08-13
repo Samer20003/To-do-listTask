@@ -55,13 +55,6 @@
             
             <!-- End of edit Form  -->
           
-            <!-- Cancel Form  -->
-            <div class="content cancelForm d-none">
-                <h5 class="title" dataindex="${index}">${todo.title}</h5>
-                <p class="parg">${todo.description}</p>
-                <p class="date">${formatDate(todo.date)}</p>
-            </div>
-            <!-- End of Cancel Form -->
         </div>
         
     </div>
@@ -71,7 +64,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
     <script>
-
         // 1. define an array of object that have the title and description and data as a keys and there values 
         // 2. define a function that convert the date ass (dd-mm)
         // 3. define a function that render the data inside our array by using forEach and make a form inside it to append it for the todoIem in html 
@@ -86,6 +78,7 @@
             // Edit Function
             function editModal(){
                 const index = $(this).data('index');
+                todos[index].isEditing = true;
                 const todo = todos[index];
                 $(this).siblings('.sort-btn, .edit-btn, .delete-btn').addClass('d-none');
                 $(this).addClass('d-none');
@@ -102,15 +95,10 @@
             // Cancel Fucntion
             function cancelButton(){
                 const index = $(this).data('index');
+                todos[index].isEditing = false; // here false fo it render the needed form 
                 const todo = todos[index];
-                const originalForm = $('.cancelForm').first().clone(); // clone it and after that update it
-                originalForm.find('.title').html(todo.title); 
-                originalForm.find('.parg').html(todo.description);
-                originalForm.find('.date').html(todo.date);
-                originalForm.removeClass('d-none');
+                renderTodos();
                 $(this).closest('li').find('.sort-btn, .edit-btn, .delete-btn').removeClass('d-none');
-                $(this).closest('.edit-form').replaceWith(originalForm);
-
             }
             // Save Function
             function saveButton(e){
@@ -138,24 +126,18 @@
             const newTitle = $('#edit-title').val();
             const newDescription = $('#edit-description').val();
 
-            $('#list').find('.sort-btn, .edit-btn, .delete-btn').removeClass('d-none');
 
             if (newTitle || newDescription || newDate) {
                 todos[index] = {
                     date: newDate, 
                     title: newTitle,
-                    description: newDescription
+                    description: newDescription,
+                    isEditing: false
                 };
-
-                const newForm = $(`
-                    <div class="content">
-                        <h5 class="title" data-index="${index}">${newTitle}</h5>  
-                        <p class="parg">${newDescription}</p>
-                        <p class="date">${formatDate(newDate)}</p>
-                    </div>
-                `);
-                $(this).closest('.edit-form').replaceWith(newForm);
             }
+            $('#list').find('.sort-btn, .edit-btn, .delete-btn').removeClass('d-none');
+
+            renderTodos();
         }
     }
 
@@ -188,23 +170,24 @@
            function DelectFunction(){
             const index = $(this).data('index');
             const todo = todos[index];
-               $('#delete-title').text(todo.title);
+            $('#delete-title').text(todo.title);
 
             var myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
             myModal.show();
 
-              $('#confirmDelete').off('click.modalDel').on('click.modalDel', function() { // delete every event listenr every time we can use namespace after click so we can specify where we need to make the event
+            $('#confirmDelete').off('click.modalDel').on('click.modalDel', function() { // delete every event listenr every time we can use namespace after click so we can specify where we need to make the event
             todos.splice(index, 1);
             myModal.hide();
             renderTodos();
+        
         });
 
            }
 
             const todos = [
-                { title: 'Reading', description: 'Read a new book ', date: '2015-04-02' },
-                { title: 'Study', description: 'Study for 4 hours per day', date: '2015-04-02' },
-                { title: 'Workout', description: 'Chest day workout for 2 hours', date: '2015-04-02' },
+                { title: 'Reading', description: 'Read a new book ', date: '2015-04-02', isEditing: false }, // i put here a state called isEditing to divide the dleation from the edit 
+                { title: 'Study', description: 'Study for 4 hours per day', date: '2015-04-02', isEditing: false},
+                { title: 'Workout', description: 'Chest day workout for 2 hours', date: '2015-04-02', isEditing: false},
             ];
     
             function formatDate(dateString) {
@@ -217,7 +200,21 @@
             function renderTodos() {
                 $('#list').empty();
                 todos.forEach((todo, index) => {
-                    const item = $(`
+                    let item;
+                    if (todo.isEditing){
+                        item = $(`
+                            <li class="list-group-item">
+                                <form class="edit-form">
+                                    <input type="text" class="form-control mb-2" id="edit-title" name="title" value="${todo.title}" required>
+                                    <input type="text" class="form-control mb-2" id="edit-description" name="description" value="${todo.description}">
+                                    <input type="date" class="form-control mb-2" id="edit-date" name="date" value="${todo.date}">
+                                    <button class="btn btn-primary btn-sm save-btn" data-index="${index}" type="submit">Save</button>
+                                    <button class="btn btn-secondary btn-sm cancel-btn" data-index="${index}">Cancel</button>
+                                </form>
+                            </li>
+            `);
+                    } else {
+                     item = $(`
                         <li class="list-group-item">
                             <div class="d-flex justify-content-between">
                                 <div class="content">
@@ -233,8 +230,10 @@
                             </div>
                         </li>
                     `);
+                    }
                     $('#list').append(item);
                 });
+             
             }
     
             let draggedItem = null;
