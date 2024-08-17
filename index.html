@@ -48,8 +48,8 @@
                 <input type="text" class="form-control mb-2" id="edit-title" name="title" value="${todo.title}" required>
                 <input type="text" class="form-control mb-2" id="edit-description" name="description" value="${todo.description}">
                 <input type="date" class="form-control mb-2" id="edit-date" name="date" value="${todo.date}">
-                <button class="btn btn-primary btn-sm save-btn" data-index="${index}" type="submit">Save</button>
-                <button class="btn btn-secondary btn-sm cancel-btn" data-index="${index}">Cancel</button>
+                <button class="btn btn-primary btn-sm save-btn" data-id="${id}" type="submit">Save</button>
+                <button class="btn btn-secondary btn-sm cancel-btn" data-id="${id}">Cancel</button>
             </form>
             </div>
             
@@ -63,6 +63,10 @@
     <script src="https://code.jquery.com/ui/1.14.0/jquery-ui.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
+
+
+   
+
     <script>
         // 1. define an array of object that have the title and description and data as a keys and there values 
         // 2. define a function that convert the date ass (dd-mm)
@@ -74,31 +78,68 @@
         // 6- in Sort button when the user click sort it can drag it while he still click the button and go with li forword or backword 
 
        ( function(){
-         
+        const todos = [
+                { id:1, title: 'Reading', description: 'Read a new book ', date: '2015-04-02', isEditing: false }, // i put here a state called isEditing to divide the dleation from the edit 
+                { id:2, title: 'Coding', description: 'Code for one hour ', date: '2015-04-02', isEditing: false }, 
+                { id:3, title: 'Study', description: 'Study for 4 hours per day', date: '2015-04-02', isEditing: false},
+                { id:4, title: 'playing', description: 'have a break for one hour', date: '2015-05-02', isEditing: false},
+                { id:5, title: 'work', description: 'go to work ', date: '2015-07-02', isEditing: false},
+                { id:6, title: 'workout', description: 'go to the gym for at least 1 hour ', date: '2015-08-02', isEditing: false},
+                { id:7, title: 'cooking', description: 'cook all gym meals', date: '2015-09-02', isEditing: false},
+
+
+
+
+
+            ];
+            // Function for group the todos by date 
+            function groupTodosByDate(todos){ // the main goal of this function is group the array bu the theid date property the result is object where the date is the kay and the value is the items that share ths same key which is the date 
+                return todos.reduce((grouped,todo)=>{ // some info about {reduce} reduce is a methode is beeing used to iterate over the todo array and give the result into on single object which is grouped
+                    const dateKey= formatDate(todo.date);
+                    if(!grouped[dateKey]){ // here we check if the dateKey is already exisit in the grouped? if not an empty array assigned to it 
+                        grouped[dateKey] = [];
+                    }
+                    grouped[dateKey].push(todo);
+                    return grouped
+                }, {}); // {} is an initial value for the grouped object 
+            }
+
             // Edit Function
-            function editModal(){
-                const index = $(this).data('index');
-                todos[index].isEditing = true;
-                const todo = todos[index];
-                $(this).siblings('.sort-btn, .edit-btn, .delete-btn').addClass('d-none');
-                $(this).addClass('d-none');
-               // create a new form to replace it when the edit button is clicked
-                const editForm = $('.edit-form').first().clone();
-                editForm.removeClass('d-none');
-                editForm.find('#edit-title').val(todo.title);
-                editForm.find('#edit-description').val(todo.description);
-                editForm.find('#edit-date').val(todo.date);
-                editForm.find('.save-btn').attr("data-index",index);
-                editForm.find('.cancel-btn').attr("data-index",index);
-                $(this).closest('.list-group-item').find('.content').replaceWith(editForm);
-            };
+            function editModal() {
+                const id = $(this).data('id'); // Retrieve the ID of the todo item
+                const todo = todos.find(t => t.id === id); // Find the todo item by its ID
+                
+                if (todo) {
+                    // Set the isEditing property to true
+                    todo.isEditing = true;
+                    
+                    // Hide the action buttons
+                    $(this).siblings('.sort-btn, .edit-btn, .delete-btn').addClass('d-none');
+                    $(this).addClass('d-none');
+
+                    // Clone and display the edit form
+                    const editForm = $('.edit-form').first().clone();
+                    editForm.removeClass('d-none');
+                    editForm.find('#edit-title').val(todo.title);
+                    editForm.find('#edit-description').val(todo.description);
+                    editForm.find('#edit-date').val(todo.date);
+                    editForm.find('.save-btn').attr("data-id", id); // Use data-id for consistency
+                    editForm.find('.cancel-btn').attr("data-id", id); // Use data-id for consistency
+
+                    // Replace the content with the edit form
+                    $(this).closest('.list-group-item').find('.content').replaceWith(editForm);
+                }
+            }
+
             // Cancel Fucntion
             function cancelButton(){
-                const index = $(this).data('index');
-                todos[index].isEditing = false; // here false fo it render the needed form 
-                const todo = todos[index];
-                renderTodos();
-                $(this).closest('li').find('.sort-btn, .edit-btn, .delete-btn').removeClass('d-none');
+                const id = $(this).data('id');
+                const todo = todos.find(t => t.id === id);
+                if (todo){
+                    todo.isEditing = false 
+                    renderTodos();
+                }
+            
             }
             // Save Function
             function saveButton(e){
@@ -121,20 +162,19 @@
 
         // If the form is valid, proceed with saving
         if(form.valid()){
-            const index = $(this).data('index');
+            const id = $(this).data('id');
             const newDate = $('#edit-date').val();
             const newTitle = $('#edit-title').val();
             const newDescription = $('#edit-description').val();
 
 
-            if (newTitle || newDescription || newDate) {
-                todos[index] = {
-                    date: newDate, 
-                    title: newTitle,
-                    description: newDescription,
-                    isEditing: false
-                };
-            }
+          const todo = todos.find(t => t.id === id); 
+          if(todo){
+            todo.date = newDate;
+            todo.title = newTitle;
+            todo.description = newDescription;
+            todo.isEditing = false; 
+          }
             $('#list').find('.sort-btn, .edit-btn, .delete-btn').removeClass('d-none');
 
             renderTodos();
@@ -168,27 +208,22 @@
             }
            // Delete function
            function DelectFunction(){
-            const index = $(this).data('index');
-            const todo = todos[index];
-            $('#delete-title').text(todo.title);
+            const id = $(this).data('id');
+            const todo = todos.findIndex(t => t.id === id) // here we search on the array for the first id that make the conditon and if it is not found it reutrn -1 findEndex return -1
+            if (todo !== -1) { // if it is ture then the item is found 
+            $('#delete-title').text(todos[todo].title); // since todo is the index of the item so we access the title using the array 
 
             var myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
             myModal.show();
 
             $('#confirmDelete').off('click.modalDel').on('click.modalDel', function() { // delete every event listenr every time we can use namespace after click so we can specify where we need to make the event
-            todos.splice(index, 1);
+            todos.splice(todo, 1); 
             myModal.hide();
             renderTodos();
         
         });
-
+        }
            }
-
-            const todos = [
-                { title: 'Reading', description: 'Read a new book ', date: '2015-04-02', isEditing: false }, // i put here a state called isEditing to divide the dleation from the edit 
-                { title: 'Study', description: 'Study for 4 hours per day', date: '2015-04-02', isEditing: false},
-                { title: 'Workout', description: 'Chest day workout for 2 hours', date: '2015-04-02', isEditing: false},
-            ];
     
             function formatDate(dateString) {
                 const date = new Date(dateString);
@@ -197,44 +232,53 @@
                 return `${day} - ${month}`;
             }
     
+            // Rendering the Todos list 
             function renderTodos() {
-                $('#list').empty();
-                todos.forEach((todo, index) => {
-                    let item;
-                    if (todo.isEditing){
-                        item = $(`
-                            <li class="list-group-item">
-                                <form class="edit-form">
-                                    <input type="text" class="form-control mb-2" id="edit-title" name="title" value="${todo.title}" required>
-                                    <input type="text" class="form-control mb-2" id="edit-description" name="description" value="${todo.description}">
-                                    <input type="date" class="form-control mb-2" id="edit-date" name="date" value="${todo.date}">
-                                    <button class="btn btn-primary btn-sm save-btn" data-index="${index}" type="submit">Save</button>
-                                    <button class="btn btn-secondary btn-sm cancel-btn" data-index="${index}">Cancel</button>
-                                </form>
-                            </li>
-            `);
-                    } else {
-                     item = $(`
-                        <li class="list-group-item">
-                            <div class="d-flex justify-content-between">
-                                <div class="content">
-                                    <h5 class="title" data-index="${index}">${todo.title}</h5>
-                                    <p class="parg">${todo.description}</p>
-                                    <p class="date">${formatDate(todo.date)}</p>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2 buttons">
-                                <button class="btn btn-secondary btn-sm sort-btn">Sort</button>
-                                <button class="btn btn-secondary btn-sm edit-btn btn2" data-index="${index}">Edit</button>
-                                <button class="btn btn-danger btn-sm delete-btn btn3 " data-bs-toggle="modal"  data-index="${index}">Delete</button>
-                            </div>
-                        </li>
-                    `);
-                    }
-                    $('#list').append(item);
-                });
-             
+            $('#list').empty();
+             const groupedTodos = groupTodosByDate(todos); // group todo by date 
+
+             for (const [date, group] of Object.entries(groupedTodos)) {
+               const header = $(`<li class="list-group-item active text-black bg-success"> ${date} </li>`);
+                $('#list').append(header);
+
+                    group.forEach(todo => {
+                        let item;
+                        if (todo.isEditing) {
+                            item = $(`
+                                <li class="list-group-item">
+                                    <form class="edit-form">
+                                        <input type="text" class="form-control mb-2" id="edit-title" name="title" value="${todo.title}" required>
+                                        <input type="text" class="form-control mb-2" id="edit-description" name="description" value="${todo.description}">
+                                        <input type="date" class="form-control mb-2" id="edit-date" name="date" value="${todo.date}">
+                                        <button class="btn btn-primary btn-sm save-btn" data-id="${todo.id}" type="submit">Save</button>
+                                        <button class="btn btn-secondary btn-sm cancel-btn" data-id="${todo.id}">Cancel</button>
+                                    </form>
+                                </li>
+                            `);
+                        } else {
+                            item = $(`
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="content">
+                                            <h5 class="title" data-id="${todo.id}">${todo.title}</h5>
+                                            <p class="parg">${todo.description}</p>
+                                            <p class="date">${formatDate(todo.date)}</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end gap-2 buttons">
+                                        <button class="btn btn-secondary btn-sm sort-btn" data-id = "${todo.id}">Sort</button>
+                                        <button class="btn btn-secondary btn-sm edit-btn btn2" data-id = "${todo.id}">Edit</button>
+                                        <button class="btn btn-danger btn-sm delete-btn btn3" data-bs-toggle ="modal"  data-id = "${todo.id}">Delete</button>
+                                    </div>
+                                </li>
+                            `);
+                        }
+
+                        $('#list').append(item);
+                    });
+                }
             }
+
     
             let draggedItem = null;
             let placeholder = $('<li class="placeholder"></li>');
@@ -273,8 +317,12 @@
             }
             function onMouseUp() {
                 if (draggedItem) {
-
-                    placeholder.before(draggedItem);
+                    const draggedDate = draggedItem.find('.date').text(); // return the date of the dragged item that i click the sort on it 
+                    const placeholderDate= placeholder.prevAll('.list-group-item.active').first().text().trim(); // return the date of the group that the user try to located the item on it here there is a sapce at the start of the date so if i sort the item in the same group it will not be sortd so i use trim() which it delete the spaces at the end and the start
+                    if(draggedDate === placeholderDate){
+                        placeholder.before(draggedItem);
+                    }
+                  
                     draggedItem.removeClass('dragging');
 
                     draggedItem.css({
