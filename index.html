@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-do</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/dist/date-fns.min.js"></script>
+
+    <!-- <link rel="stylesheet" href="index.css"> -->
+        <!-- 1. You have a todo list
+        2. Each item contains title, description, date to do it
+        3. You need to display this list each item in a row
+        4. In each row display the title, description and formatted date (dd-mm)
+        5. Each row should contain 3 actions (sort, edit, delete)
+        6. Delete action opens a confirmation alert
+        7. Edit action makes the todo's title and description and date editable
+        8. Group the todos by day
+        9. Sorting should happen in the same group -->
+</head>
+<body class="bg-success p-2" style="--bs-bg-opacity: .5;">
+    <div class="d-flex justify-content-center align-items-center mainContainer ">
+        <div class="to-do" style="width: 400px;">
+            <h1 class="text-dark d-flex justify-content-center">To-Do List</h1>
+            <ul class="list-group" id="list"></ul>
+            <!-- Delete Form -->
+            <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                           <h5 class="modal-title" id="deleteModalLabel">Warning!</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                     </div>
+                    <div class="modal-body">
+                        <p id="mainTitle">Are you sure you want to delete this <span id="delete-title"></span>?</p>
+                     </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="confirmDelete">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+            <!-- End of Edit Form -->
+
+            <!-- Edit Form  -->
+            <div class="edit-form d-none">
+                <form class="cmxform" id="commentForm" method="get"  action="">
+                <input type="text" class="form-control mb-2" id="edit-title" name="title" value="${todo.title}" required>
+                <input type="text" class="form-control mb-2" id="edit-description" name="description" value="${todo.description}">
+                <input type="date" class="form-control mb-2" id="edit-date" name="date" value="${todo.date}">
+                <button class="btn btn-primary btn-sm save-btn" data-id="${id}" type="submit">Save</button>
+                <button class="btn btn-secondary btn-sm cancel-btn" data-id="${id}">Cancel</button>
+            </form>
+            </div>
+            <!-- End of edit Form  -->
+          
+        </div>
+        
+    </div>
+    
+    <script src="jquery-3.7.1.js"></script>
+    <script src="https://code.jquery.com/ui/1.14.0/jquery-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
+    <script>
+        // 1. define an array of object that have the title and description and data as a keys and there values 
+        // 2. define a function that convert the date ass (dd-mm)
+        // 3. define a function that render the data inside our array by using forEach and make a form inside it to append it for the todoIem in html 
+        // 4- in Delete button i make a modal to pop it when the user click delete to confirm the deletion of the li 
+        // 5- in Edit button when the user click edit it change the attribute to inputs so the user can add what he need 
+        //     * also on edit button there is two buttons save and cancel the save button take the new value that the user insert it and put it insted of the old one
+        //     * the cancel button will close the modal that shown and return the user in the li every button work alone to the specifc li 
+        // 6- in Sort button when the user click sort it can drag it while he still click the button and go with li forword or backword 
+      
+       ( function(){
+       
+        // const newFormateDate= format
+        const todos = [
+                { id:1, title: 'Reading', description: 'Read a new book ', date: '2015-04-02', isEditing: false }, // i put here a state called isEditing to divide the dleation from the edit 
+                { id:2, title: 'Coding', description: 'Code for one hour ', date: '2015-04-02', isEditing: false }, 
+                { id:3, title: 'Study', description: 'Study for 4 hours per day', date: '2015-04-02', isEditing: false},
+                { id:4, title: 'playing', description: 'have a break for one hour', date: '2015-05-02', isEditing: false},
+                { id:5, title: 'work', description: 'go to work ', date: '2015-07-02', isEditing: false},
+                { id:6, title: 'workout', description: 'go to the gym for at least 1 hour ', date: '2015-08-02', isEditing: false},
+                { id:7, title: 'cooking', description: 'cook all gym meals', date: '2015-09-02', isEditing: false},
+
+
+
+
+
+            ];
+            // Function for group the todos by date 
+            function groupTodosByDate(todos){ // the main goal of this function is group the array bu the theid date property the result is object where the date is the kay and the value is the items that share ths same key which is the date 
+                return todos.reduce((grouped,todo)=>{ // some info about {reduce} reduce is a methode is beeing used to iterate over the todo array and give the result into on single object which is grouped
+                    const dateKey= formatDate(todo.date);
+                    if(!grouped[dateKey]){ // here we check if the dateKey is already exisit in the grouped? if not an empty array assigned to it 
+                        grouped[dateKey] = [];
+                    }
+                    grouped[dateKey].push(todo);
+                    return grouped
+                }, {}); // {} is an initial value for the grouped object 
+            }
+
+            // Edit Function
+            function editModal() {
+                const id = $(this).data('id'); // Retrieve the ID of the todo item
+                const todo = todos.find(t => t.id === id); // Find the todo item by its ID
+                
+                if (todo) {
+                    // Set the isEditing property to true
+                    todo.isEditing = true;
+                    
+                    // Hide the action buttons
+                    $(this).siblings('.sort-btn, .edit-btn, .delete-btn').addClass('d-none');
+                    $(this).addClass('d-none');
+
+                    // Clone and display the edit form
+                    const editForm = $('.edit-form').first().clone();
+                    editForm.removeClass('d-none');
+                    editForm.find('#edit-title').val(todo.title);
+                    editForm.find('#edit-description').val(todo.description);
+                    editForm.find('#edit-date').val(todo.date);
+                    editForm.find('.save-btn').attr("data-id", id); // Use data-id for consistency
+                    editForm.find('.cancel-btn').attr("data-id", id); // Use data-id for consistency
+
+                    // Replace the content with the edit form
+                    $(this).closest('.list-group-item').find('.content').replaceWith(editForm);
+                }
+            }
+
+            // Cancel Fucntion
+            function cancelButton(){
+                const id = $(this).data('id');
+                const todo = todos.find(t => t.id === id);
+                if (todo){
+                    todo.isEditing = false 
+                    renderTodos();
+                }
+            
+            }
+            // Save Function
+            function saveButton(e){
+              e.preventDefault();  // Prevent form from submitting normally
+              const form = $(this).closest('form');
+
+                // Validate the form
+                form.validate({
+                    rules: {
+                        title: {
+                            required: true
+                        }
+                    },
+                    messages: {
+                        title: {
+                            required: "Title is required."
+                        }
+                    },
+                });
+
+        // If the form is valid, proceed with saving
+        if(form.valid()){
+            const id = $(this).data('id');
+            const newDate = $('#edit-date').val();
+            const newTitle = $('#edit-title').val();
+            const newDescription = $('#edit-description').val();
+
+
+          const todo = todos.find(t => t.id === id); 
+          if(todo){
+            todo.date = newDate;
+            todo.title = newTitle;
+            todo.description = newDescription;
+            todo.isEditing = false; 
+
+            todos.sort((a,b)=> new Date(a.date) - new Date(b.date)); 
+          }
+            $('#list').find('.sort-btn, .edit-btn, .delete-btn').removeClass('d-none');
+
+            renderTodos();
+        }
+    }
+
+            // Sort Function
+            function sortFunction(e){
+                // store the original Y position 
+                draggedItem = $(this).closest('li');
+                draggedItem.data('originalY', e.pageY);
+                draggedItem.data('initialTop', draggedItem.offset().top); // storte the original top position of the dreagged item when the draggin starts i store this value to remember where the dragging started so i can correctly adjust the position of the elemnt as the mouse move  
+                // Attach the event handler for dragging 
+                $(document).on('mousemove', onMouseMove); // define a function that will be called when the mouse moves
+                $(document).on('mouseup', onMouseUp); // define a function that will be called when the mouse is released
+
+                // prepare the placeholder for dragging
+                placeholder.height(draggedItem.outerHeight()); // set placeholder height to the height of the dragged item ourHeight() return the height with the border and padding
+                draggedItem.after(placeholder);
+                draggedItem.addClass('dragging');
+
+                // initial styles for the dragged item 
+                draggedItem.css({
+                    position: 'absolute', 
+                    zIndex: 1000, // ensure the draged item apper on the top of the other items
+                    width: draggedItem.outerWidth(),
+                    top: draggedItem.offset().top, 
+                    left: draggedItem.offset().left
+                });
+
+            }
+           // Delete function
+           function DelectFunction(){
+            const id = $(this).data('id');
+            const todo = todos.findIndex(t => t.id === id) // here we search on the array for the first id that make the conditon and if it is not found it reutrn -1 findEndex return -1
+            if (todo !== -1) { // if it is ture then the item is found 
+            $('#delete-title').text(todos[todo].title); // since todo is the index of the item so we access the title using the array 
+
+            var myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            myModal.show();
+
+            $('#confirmDelete').off('click.modalDel').on('click.modalDel', function() { // delete every event listenr every time we can use namespace after click so we can specify where we need to make the event
+            todos.splice(todo, 1); 
+            myModal.hide();
+            renderTodos();
+        
+        });
+        }
+           }
+    
+            function formatDate(dateString) {
+                return moment(dateString).format('DD - MM');
+            }
+    
+            // Rendering the Todos list 
+            function renderTodos() {
+            $('#list').empty();
+             const groupedTodos = groupTodosByDate(todos); // group todo by date 
+
+             for (const [date, group] of Object.entries(groupedTodos)) {
+               const header = $(`<li class="list-group-item active text-black bg-success"> ${date} </li>`);
+                $('#list').append(header);
+
+                    group.forEach(todo => {
+                        let item;
+                        if (todo.isEditing) {
+                            item = $(`
+                                <li class="list-group-item">
+                                    <form class="edit-form">
+                                        <input type="text" class="form-control mb-2" id="edit-title" name="title" value="${todo.title}" required>
+                                        <input type="text" class="form-control mb-2" id="edit-description" name="description" value="${todo.description}">
+                                        <input type="date" class="form-control mb-2" id="edit-date" name="date" value="${todo.date}">
+                                        <button class="btn btn-primary btn-sm save-btn" data-id="${todo.id}" type="submit">Save</button>
+                                        <button class="btn btn-secondary btn-sm cancel-btn" data-id="${todo.id}">Cancel</button>
+                                    </form>
+                                </li>
+                            `);
+                        } else {
+                            item = $(`
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="content">
+                                            <h5 class="title" data-id="${todo.id}">${todo.title}</h5>
+                                            <p class="parg">${todo.description}</p>
+                                            <p class="date">${formatDate(todo.date)}</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end gap-2 buttons">
+                                        <button class="btn btn-secondary btn-sm sort-btn" data-id = "${todo.id}">
+                                            <i class="fa-solid fa-sort"></i> 
+                                            </button>
+                                        <button class="btn btn-secondary btn-sm edit-btn btn2" data-id = "${todo.id}">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
+                                        <button class="btn btn-danger btn-sm delete-btn btn3" data-bs-toggle ="modal"  data-id = "${todo.id}">
+                                            <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                    </div>
+                                </li>
+                            `);
+                        }
+
+                        $('#list').append(item);
+                    });
+                }
+            }
+
+    
+            let draggedItem = null;
+            let placeholder = $('<li class="placeholder"></li>');
+    
+            // Delete button
+            $('#list').on('click', '.delete-btn', DelectFunction); 
+            // Edit button
+            $('#list').on('click', '.edit-btn', editModal);
+            // Cancel button
+            $('#list').on('click', '.cancel-btn', cancelButton);
+            // Save button
+            $('#list').on('click', '.save-btn', saveButton);
+            // Sort button
+            $('#list').on('mousedown', '.sort-btn', sortFunction) ;
+    
+            function onMouseMove(e) {
+                if (draggedItem) {
+                    const originalY = draggedItem.data('originalY');
+                    const deltaY = e.pageY - originalY; // deltaY is a variable used to store the difference between the current vertical mouse position (e.pageY) and the vertical mosue postion where the dragd started which is (orignalY)
+                    draggedItem.css({
+                        top: deltaY + draggedItem.data('initialTop') // i add deltaY to the inital top to ensure that the item moces smoothly preventing it from jumping or misaligning
+                        
+                    });
+                    $('#list').find('li:not(.placeholder)').each(function() {
+                        const currentItem = $(this);
+                        const offset = currentItem.offset();
+                        const midpoint = offset.top + currentItem.outerHeight() / 2;
+                        if (e.pageY < midpoint) { 
+                            placeholder.insertBefore(currentItem);
+                            return false;
+                        } else {
+                            placeholder.insertAfter(currentItem);
+                        }
+                    });
+                }
+            }
+            function onMouseUp() {
+                if (draggedItem) {
+                    const draggedDate = draggedItem.find('.date').text(); // return the date of the dragged item that i click the sort on it 
+                    const placeholderDate= placeholder.prevAll('.list-group-item.active').first().text().trim(); // return the date of the group that the user try to located the item on it here there is a sapce at the start of the date so if i sort the item in the same group it will not be sortd so i use trim() which it delete the spaces at the end and the start
+                    if(draggedDate === placeholderDate){ // 
+                        placeholder.before(draggedItem);
+                    }
+                  
+                    draggedItem.removeClass('dragging');
+
+                    draggedItem.css({
+                        position: '',
+                        top: '',
+                        left: '',
+                        zIndex: ''
+                    });
+                    placeholder.remove();
+                    draggedItem = null;
+                    $(document).off('mousemove', onMouseMove);
+                    $(document).off('mouseup', onMouseUp);
+                }
+            }
+            renderTodos();
+        })();
+    </script>
+    
+</body>
+</html>
+
+
